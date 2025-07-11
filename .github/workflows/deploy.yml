@@ -55,7 +55,7 @@ jobs:
         if: steps.slack_deploy.outcome == 'failure'
         run: |
           echo 'Slack CLI logs:'
-          cat ${{ env.HOME }}/.slack/logs/*.log || echo 'No logs found.'
+          cat ${HOME:-/home/runner}/.slack/logs/*.log || echo 'No logs found.'
           exit 1
 
       - name: Locate Cloudformation Stack Name
