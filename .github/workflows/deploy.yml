@@ -23,14 +23,16 @@ jobs:
 
       - name: Create GitHub Deployment
         id: create_deployment
-        uses: peter-evans/create-deployment@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          environment: sandbox
-          transient_environment: false
-          auto_inactive: true
-          description: Deploying Slack App
-          ref: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DEPLOYMENT_ID=$(gh api repos/${{ github.repository }}/deployments \
+            -f ref=${{ github.sha }} \
+            -f environment=sandbox \
+            -f description="Deploying Slack App" \
+            -f required_contexts[]='' \
+            --jq '.id')
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
       - name: Deploy Slack App
         id: slack_deploy
@@ -67,12 +69,13 @@ jobs:
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
       - name: Update GitHub Deployment Status
-        uses: peter-evans/deployment-status@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
-          state: success
-          environment: sandbox
-          environment_url: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
-          payload: |
-            {"image_uri": "${{ steps.cdk_output.outputs.image_uri }}"}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses \
+            -f state=success \
+            -f environment=sandbox \
+            -f environment_url="https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
+            -f log_url="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -f description="Deployment finished" \
+            -f payload="$(jq -n --arg image_uri '${{ steps.cdk_output.outputs.image_uri }}' '{image_uri: $image_uri}')"
