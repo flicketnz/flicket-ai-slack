@@ -47,8 +47,16 @@ jobs:
       - name: Deploy Slack App
         id: slack_deploy
         working-directory: flicket-ai/
+        continue-on-error: true
         run: |
           slack deploy --app "${{ vars.SLACK_APP_ID }}" --token "${{ secrets.SLACK_SERVICE_TOKEN }}"
+
+      - name: Print Slack CLI logs and fail if deploy failed
+        if: steps.slack_deploy.outcome == 'failure'
+        run: |
+          echo 'Slack CLI logs:'
+          cat ${{ env.HOME }}/.slack/logs/*.log || echo 'No logs found.'
+          exit 1
 
       - name: Locate Cloudformation Stack Name
         id: stack_name
