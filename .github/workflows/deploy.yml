@@ -47,7 +47,7 @@ jobs:
       - name: Deploy Slack App
         id: slack_deploy
         run: |
-          slack deploy --app "${{ env.SLACK_APP_ID }}" --token "${{ secrets.SLACK_SERVICE_TOKEN }}"
+          slack deploy --app "${{ vars.SLACK_APP_ID }}" --token "${{ secrets.SLACK_SERVICE_TOKEN }}"
 
       - name: Locate Cloudformation Stack Name
         id: stack_name
