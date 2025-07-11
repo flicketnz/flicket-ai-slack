@@ -46,6 +46,7 @@ jobs:
 
       - name: Deploy Slack App
         id: slack_deploy
+        working-directory: flicket-ai/
         run: |
           slack deploy --app "${{ vars.SLACK_APP_ID }}" --token "${{ secrets.SLACK_SERVICE_TOKEN }}"
 
