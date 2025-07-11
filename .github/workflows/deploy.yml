@@ -8,8 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      APP: ${{ env.SLACK_APP_ID }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,6 +36,7 @@ jobs:
         id: slack_deploy
         env:
           SLACK_SERVICE_TOKEN: ${{ secrets.SLACK_SERVICE_TOKEN }}
+          APP: ${{ env.SLACK_APP_ID }}
         run: |
           slack deploy --app "$APP" --token "$SLACK_SERVICE_TOKEN"
 
