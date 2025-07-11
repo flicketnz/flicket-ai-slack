@@ -49,6 +49,7 @@ jobs:
         working-directory: flicket-ai/
         continue-on-error: true
         run: |
+          npm ci
           slack deploy --app "${{ vars.SLACK_APP_ID }}" --token "${{ secrets.SLACK_SERVICE_TOKEN }}"
 
       - name: Print Slack CLI logs and fail if deploy failed
