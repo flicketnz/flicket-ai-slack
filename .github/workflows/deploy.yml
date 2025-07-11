@@ -1,0 +1,78 @@
+name: Deploy Slack App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      APP: ${{ env.SLACK_APP_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+
+      - name: Install Slack CLI
+        run: |
+          curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash
+          echo "export PATH=\"$HOME/.slack/bin:$PATH\"" >> $GITHUB_ENV
+
+      - name: Create GitHub Deployment
+        id: create_deployment
+        uses: peter-evans/create-deployment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: sandbox
+          transient_environment: false
+          auto_inactive: true
+          description: Deploying Slack App
+          ref: ${{ github.sha }}
+
+      - name: Deploy Slack App
+        id: slack_deploy
+        env:
+          SLACK_SERVICE_TOKEN: ${{ secrets.SLACK_SERVICE_TOKEN }}
+        run: |
+          slack deploy --app "$APP" --token "$SLACK_SERVICE_TOKEN"
+
+      - name: Locate Cloudformation Stack Name
+        id: stack_name
+        run: |
+          TEMPLATE_FILE=$(find cdk/cdk.out -name "*.template.json" | head -n 1)
+          if [ -n "$TEMPLATE_FILE" ]; then
+            TEMPLATE_NAME=$(basename "$TEMPLATE_FILE" .template.json)
+            echo "STACK_NAME=$TEMPLATE_NAME" >> $GITHUB_OUTPUT
+            echo "Found template: $TEMPLATE_NAME"
+          else
+            echo "No template file found"
+            exit 1
+          fi
+
+      - name: Get ECR Image URI from CloudFormation
+        id: cdk_output
+        env:
+          AWS_REGION: ${{ env.AWS_REGION || 'ap-southeast-2' }}
+        run: |
+          STACK_NAME=${{ steps.stack_name.outputs.STACK_NAME }}
+          IMAGE_URI=$(aws cloudformation describe-stacks \
+            --region "$AWS_REGION" \
+            --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='ECRImageUri'].OutputValue" \
+            --output text)
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Update GitHub Deployment Status
+        uses: peter-evans/deployment-status@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
+          state: success
+          environment: sandbox
+          environment_url: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+          payload: |
+            {"image_uri": "${{ steps.cdk_output.outputs.image_uri }}"}
