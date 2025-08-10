@@ -54,7 +54,8 @@ export class Config {
     // LLM Configuration
     this.llm = {
       provider: "openrouter",
-      model: process.env.LLM_MODEL || "qwen/qwen3-235b-a22b",
+      // model: process.env.LLM_MODEL || "qwen/qwen3-235b-a22b",
+      model: process.env.LLM_MODEL || "google/gemini-2.5-flash",
       maxTokens: process.env.LLM_MAX_TOKENS
         ? Number.parseInt(process.env.LLM_MAX_TOKENS)
         : 2000,
@@ -87,7 +88,7 @@ export class Config {
         `You're an assistant in a Slack workspace.
 Users in the workspace will ask you to help them write something or to think better about a specific topic.
 You'll respond to those questions in a professional way.
-When a prompt has Slack's special syntax like <@USER_ID> or <#CHANNEL_ID>, you must keep them as-is in your response.
+When a prompt has Slack's special syntax like <@USER_ID> or <#CHANNEL_ID>, you must keep them as-is if you use it in your response.
 Responses should be limited to 1-2 paragraphs, and should not be too verbose. The exception to this is when the user asks for a detailed explanation or a long-form response.
 
 Message Formatting: messages should be formatted ONLY wwith slack 'mrkdwn' syntax. Examples: 
@@ -95,7 +96,7 @@ _italic_, *bold*, ~strike~.
 Line break by including '\n' . 
 block quotes by preceding a line with '>'. 
 inline code by surrounding with '\`', \`\`\`This is a code block\nAnd it's multi-line\`\`\` 
-you can add lines by including the url as is, or named links like this: <http://www.example.com|This message *is* a link>. 
+you can add links by including the url as is, or named links like this: <http://www.example.com|This message *is* a link>. 
 you may also use any unicode emojis
 you MAY NOT use any heading syntax`,
       searxngApiBase: process.env.SEARXNG_API_BASE ?? ""

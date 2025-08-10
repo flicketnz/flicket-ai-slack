@@ -1,0 +1,71 @@
+{
+	"name": "flicket-nestjs-slackbot",
+	"private": true,
+	"version": "1.0.0",
+	"description": "Flicket Slackbot as a NestJS App",
+	"license": "INTENRAL",
+	"scripts": {
+		"build": "nest build",
+		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+		"start": "nest start",
+		"start:dev": "slack run --app A098UM44QLB",
+		"start:debug": "nest start --debug --watch",
+		"start:prod": "node dist/main",
+		"lint": "biome lint",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:cov": "vitest --coverage"
+	},
+	"engines": {
+		"npm": ">=11.0.0",
+		"node": ">=24.0.0"
+	},
+	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.863.0",
+		"@langchain/community": "^0.3.49",
+		"@langchain/core": "^0.3.66",
+		"@langchain/langgraph": "^0.4.3",
+		"@langchain/langgraph-checkpoint": "^0.1.0",
+		"@langchain/openai": "^0.6.3",
+		"@nestjs/common": "11.1.5",
+		"@nestjs/config": "^4.0.2",
+		"@nestjs/core": "11.1.5",
+		"@nestjs/cqrs": "^11.0.3",
+		"@nestjs/platform-express": "11.1.5",
+		"@nestjs/terminus": "11.0.0",
+		"joi": "^18.0.0",
+		"langchain": "^0.3.30",
+		"nestjs-dynamoose": "^0.6.0",
+		"nestjs-slack-bolt": "^1.4.0",
+		"reflect-metadata": "0.2.2",
+		"rxjs": "7.8.2"
+	},
+	"devDependencies": {
+		"@eslint/config-helpers": "^0.3.1",
+		"@eslint/js": "^9.33.0",
+		"@langchain/langgraph-checkpoint-validation": "^0.1.0",
+		"@nestjs/cli": "^11.0.10",
+		"@nestjs/testing": "^11.1.6",
+		"@slack/cli-hooks": "^1.2.1",
+		"@tsconfig/node24": "^24.0.1",
+		"@types/joi": "^17.2.2",
+		"@vitest/ui": "^3.2.4",
+		"dynamoose-logger": "^4.0.4",
+		"eslint": "^8.57.1",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-prettier": "^5.5.4",
+		"eslint-plugin-simple-import-sort": "^12.1.1",
+		"eslint-plugin-unused-imports": "^4.1.4",
+		"globals": "^16.3.0",
+		"prettier": "^3.6.2",
+		"testcontainers": "^11.5.1",
+		"typescript": "^5.9.2",
+		"typescript-eslint": "^8.39.0",
+		"vitest": "^3.2.4"
+	},
+	"overrides": {
+		"@langchain/langgraph-checkpoint-validation": {
+			"@langchain/langgraph-checkpoint": "$@langchain/langgraph-checkpoint"
+		}
+	}
+}

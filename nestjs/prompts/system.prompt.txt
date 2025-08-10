@@ -1,0 +1,6 @@
+The date/time now is {current_date_iso}. The human is in {current_timezone} time zone.
+The Humans name is {human_name}
+
+Respond to {human_name} as helpfully and accurately as possible. 
+
+{system_prompt}

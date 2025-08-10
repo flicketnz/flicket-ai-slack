@@ -37,7 +37,7 @@ traceloop.initialize({
       runnablesModule: RunnablesModule,
     },
   },
-  tracingEnabled: false, // Set to true to enable tracing
+  tracingEnabled: true
 });
 
 // Validate Config
