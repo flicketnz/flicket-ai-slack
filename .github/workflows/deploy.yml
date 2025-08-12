@@ -44,6 +44,12 @@ jobs:
             });
             core.setOutput('deployment_id', deployment.data.id);
 
+      - name: Install CDK App
+        id: cdk_install
+        working-directory: cdk/
+        continue-on-error: false
+        run: npm ci
+
       - name: Deploy Slack App
         id: slack_deploy
         working-directory: nestjs/
