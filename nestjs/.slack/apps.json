@@ -1,1 +1,10 @@
-{}
+{
+  "apps": {
+    "T01A5T322NT": {
+      "app_id": "A099Z091RK8",
+      "team_domain": "flicket-workspace",
+      "team_id": "T01A5T322NT"
+    }
+  },
+  "default": "flicket-workspace"
+}

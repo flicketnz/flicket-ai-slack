@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 
 import { ChatMessage, HumanMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { StructuredTool, type Tool as BaseTool } from "@langchain/core/tools";
+import {
+  StructuredToolInterface,
+  type Tool as BaseTool,
+} from "@langchain/core/tools";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -23,7 +26,7 @@ import { AiToolProvider, Tool } from "../../tools/ai-tools";
 @Injectable()
 export class LlmService implements OnApplicationBootstrap {
   private readonly logger = new Logger(LlmService.name);
-  private defaultTools: StructuredTool[] = [];
+  private defaultTools: StructuredToolInterface[] = [];
   private prompts: {
     systemPrompt: string;
   };
@@ -44,13 +47,24 @@ export class LlmService implements OnApplicationBootstrap {
 
   onApplicationBootstrap() {
     // TODO: refine this to only get tools providers that are in scope of this module. currently gets providers from across the system
-    const tools = this.discoveryService
+    const toolsAndToolkits = this.discoveryService
       .getProviders({ metadataKey: Tool.KEY })
       // ge the tools formt he providers
       .map((tp) => (tp.instance as AiToolProvider).tool)
       // filter out the undefined (disabled) tools
       .filter((tool) => !!tool);
 
+    const tools = toolsAndToolkits.reduce<StructuredToolInterface[]>(
+      (toolList, t) => {
+        if ("tools" in t) {
+          toolList.push(...t.getTools());
+        } else {
+          toolList.push(t);
+        }
+        return toolList;
+      },
+      [],
+    );
     // add tools
     this.defaultTools.push(...tools);
   }
@@ -102,7 +116,7 @@ export class LlmService implements OnApplicationBootstrap {
   /**
    * Gets available tools
    */
-  getAvailableTools(): StructuredTool[] {
+  getAvailableTools(): StructuredToolInterface[] {
     return [...this.defaultTools];
   }
 

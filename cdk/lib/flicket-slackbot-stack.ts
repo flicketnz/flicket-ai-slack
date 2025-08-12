@@ -2,21 +2,22 @@ import { resolve } from "node:path";
 import { Cpu, HealthCheckProtocolType, Memory, Service, Source } from "@aws-cdk/aws-apprunner-alpha";
 import * as cdk from "aws-cdk-lib";
 import { DockerImageAsset } from "aws-cdk-lib/aws-ecr-assets";
-import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { CfnContainer } from "aws-cdk-lib/aws-lightsail";
 import type { Construct } from "constructs";
+import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
 
 export class FlicketSlackbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const applicationPort = Number.parseInt(
-      this.node.tryGetContext("flicket-ai-slackapp_port") ?? "8000",
+      this.node.tryGetContext("flicket-ai_port") ?? "8000",
     );
 
     // Define a Docker image asset
-    const dockerImageAsset = new DockerImageAsset(this, "FlicketAiSlackApp", {
-      directory: resolve("..", "flicket-ai"), // Path to the directory containing the Dockerfile
+    const dockerImageAsset = new DockerImageAsset(this, "FlicketAiApp", {
+      directory: resolve("..", "nestjs"), // Path to the directory containing the Dockerfile
       cacheFrom: [
         {
           type: "local",
@@ -29,21 +30,26 @@ export class FlicketSlackbotStack extends cdk.Stack {
       },
       buildArgs: {
         NODE_VERSION:
-          this.node.tryGetContext("flicket-ai-slackapp_node-version") ?? "24",
+          this.node.tryGetContext("flicket-ai_node-version") ?? "24",
         ALPINE_VERSION:
-          this.node.tryGetContext("flicket-ai-slackapp_alpine-version") ??
+          this.node.tryGetContext("flicket-ai_alpine-version") ??
           "3.21",
       },
       platform: {
         platform:
-          this.node.tryGetContext("flicket-ai-slackapp_platform") ??
+          this.node.tryGetContext("flicket-ai_platform") ??
           "linux/amd64",
       },
     });
 
-    const slackAppToken = this.node.tryGetContext("flicket-ai-slackapp_slack-app-token") ?? process.env.SLACK_APP_TOKEN
-    const slackBotToken = this.node.tryGetContext("flicket-ai-slackapp_slack-bot-token") ?? process.env.SLACK_BOT_TOKEN
-    const openRouterAPIKey = this.node.tryGetContext("flicket-ai-slackapp_open-router-api-key") ?? process.env.OPENROUTER_API_KEY
+    const instanceRole = new Role(this, "FlicketAiInstanceRole", {
+      assumedBy: new ServicePrincipal("tasks.apprunner.amazonaws.com"),
+    });
+
+    const slackAppToken = this.node.tryGetContext("flicket-ai_slack-app-token") ?? process.env.SLACK_APP_TOKEN
+    const slackBotToken = this.node.tryGetContext("flicket-ai_slack-bot-token") ?? process.env.SLACK_BOT_TOKEN
+    const openRouterAPIKey = this.node.tryGetContext("flicket-ai_open-router-api-key") ?? process.env.OPENROUTER_API_KEY
+    const dynamoDbPrefix = this.node.tryGetContext("flicket-ai_dynamodb-table-prefix") ?? "FlicketAI_"
 
     new Service(this, "Service", {
       cpu: Cpu.QUARTER_VCPU,
@@ -55,18 +61,34 @@ export class FlicketSlackbotStack extends cdk.Stack {
           environmentVariables: {
             "SLACK_BOT_TOKEN": slackBotToken,
             "SLACK_APP_TOKEN": slackAppToken,
-            "OPENROUTER_API_KEY": openRouterAPIKey,
-            "SEARXNG_API_BASE": "https://searx.perennialte.ch/",
+            "LLM_PRIMARY_PROVIDER": "openai",
+            "LLM_OPENAI_KEY": openRouterAPIKey,
+            "LLM_OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
+            "LLM_OPENAI_MODEL": "anthropic/claude-3.5-haiku",
+            "LLM_TOOLS_SEARXNG_ENABLED": "true",
+            "LLM_TOOLS_SEARXNG_API_BASE": "https://search.canine.tools/",
+            "LLM_TOOLS_SLACK_ENABLED":"true",
             "NODE_ENV": "production",
+            DYNAMODB_TABLE_PREFIX: dynamoDbPrefix,
             PORT: `${applicationPort}`
           },
           environmentSecrets: {},
         },
         asset: dockerImageAsset,
       }),
-
+      instanceRole,
       autoDeploymentsEnabled: false,
     });
+
+    
+
+    const checkpointTable = new Table(this, 'FlicketAiCheckpointTable', {
+      partitionKey: {name:'threadId',type: AttributeType.STRING },
+      sortKey: { name:'recordId', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      tableName:`${dynamoDbPrefix}Checkpoints`,
+    });
+    checkpointTable.grantReadWriteData(instanceRole);
 
     // Output the ECR URI
     new cdk.CfnOutput(this, "ECRImageUri", {

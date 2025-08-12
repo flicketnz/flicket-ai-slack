@@ -34,9 +34,10 @@ import { AIModule } from "./ai/ai.module";
 
         return {
           ddb,
-          logger: true,
+          logger: false,
           table: {
             create: config["dynamodb.createTables"],
+            prefix: config["dynamodb.tablePrefix"],
           },
         };
       },

@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noThenProperty: <explanation> */
 import * as Joi from "joi";
 
 import { LLM_Provider } from "../types/config.types";

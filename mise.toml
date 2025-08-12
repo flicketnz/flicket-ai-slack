@@ -1,6 +1,5 @@
 [tools]
 node = "24"
-"ubi:biomejs/biome" = { version = "latest", tag_regex = '^@biomejs\/biome@\d\.\d\.\d$' }
 deno = "2.4.1"
 
 [env]
@@ -8,9 +7,9 @@ deno = "2.4.1"
 JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION = true
 
 [tasks."build:container:local"]
-dir = "{{ config_root }}/flicket-ai"
+dir = "{{ config_root }}/nestjs"
 run = """
-  docker buildx build -t flicker-ai-slackapp \
+  docker buildx build -t flicker-ai-nestjs \
     --cache-to type=local,dest="$HOME"/container/cache/flicket-ai-slackapp \
     --cache-from type=local,src="$HOME"/container/cache/flicket-ai-slackapp \
     .
