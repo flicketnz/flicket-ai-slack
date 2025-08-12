@@ -12,7 +12,9 @@ export const slackValidationSchema = Joi.object({
     then: Joi.string().required(),
     otherwise: Joi.disallow(),
   }),
-  SLACK_SOCKET_MODE: Joi.boolean().description(
-    "When true, runs app with socket connections to slack insteack of http endpoints",
-  ),
+  SLACK_SOCKET_MODE: Joi.boolean()
+    .description(
+      "When true, runs app with socket connections to slack instead of http endpoints",
+    )
+    .default(false),
 });

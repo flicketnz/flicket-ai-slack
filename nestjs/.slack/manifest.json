@@ -1,6 +1,10 @@
 {
+  "_metadata": {
+    "major_version": 2,
+    "minor_version": 1
+  },
   "display_information": {
-    "name": "Flicket AI2"
+    "name": "Flicket AI"
   },
   "features": {
     "app_home": {
@@ -9,7 +13,7 @@
       "messages_tab_read_only_enabled": false
     },
     "bot_user": {
-      "display_name": "FlicKAI2",
+      "display_name": "FlicKAI",
       "always_online": false
     },
     "assistant_view": {

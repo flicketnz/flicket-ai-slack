@@ -13,8 +13,15 @@ Follow these steps to get your development environment up and running:
 
 1. **Install the Slack CLI** (if not already installed)
 
-   ```bash
+   ```sh
    curl -fsSL https://downloads.slack-edge.com/slack-cli/install.sh | bash
+   ```
+
+   If this installer outputs an error `⚠️ Failed to create a symbolic link!`, you will need to manually manage your PATH. The process is different depending on your setup - but here is the most basic verison (adapt to your needs)
+
+   ```sh
+   # this adds a line to the end of your `.zshenv` file to source the slack binary form where it was installed
+   echo "export PATH=\"$HOME/.slack/bin:\$PATH\"" >> ${ZDOTDIR:-$HOME}/.zshenv
    ```
 
 1. **Authenticate with Slack** (if not already authenticated)
@@ -35,6 +42,8 @@ Follow these steps to get your development environment up and running:
    ```bash
    ./scripts/slack-create-local-app.bash
    ```
+
+   _If your asked to update a manifest, you should reply in affirmatve (i.e. hit `y`)_
 
 1. **Set up your environment variables**
 
@@ -57,6 +66,8 @@ Follow these steps to get your development environment up and running:
    ```bash
    npm run start:dev
    ```
+
+   _If your asked to update a manifest, you should reply in affirmatve (i.e. hit `y`)_
 
 You may also want to use [mise](https://mise.jdx.dev/) - this repo is setup with a mise.toml file to manage tools and other things
 

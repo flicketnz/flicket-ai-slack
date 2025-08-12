@@ -42,10 +42,10 @@ jq --arg app_id "$APP_ID" --arg team_id "$SLACK_TEAM_ID" \
   "$APPS_DEV_JSON" > "$APPS_DEV_JSON.tmp" && mv "$APPS_DEV_JSON.tmp" "$APPS_DEV_JSON"
 
 # swap the .slack/config.json manifest.source value to remote
-jq '.manifest.source = "remote"' .slack/config.json > /dev/null
+jq '.manifest.source = "remote"' .slack/config.json > .slack/config.json.tmp && mv .slack/config.json.tmp .slack/config.json
 
 # link the app
 slack app link --app $APP_ID --environment local --team $SLACK_TEAM_ID 
 
 # swap manifest.source value back to local
-jq '.manifest.source = "local"' .slack/config.json > /dev/null
+jq '.manifest.source = "local"' .slack/config.json > .slack/config.json.tmp && mv .slack/config.json.tmp .slack/config.json

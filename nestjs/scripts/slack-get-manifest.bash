@@ -4,7 +4,7 @@
 USER_NAME=$(git config --global user.name)
 
 
-# Check for --protocol=message-boundaries and --boundary, and echo the value passed to --boundary if both are present
+# Check for --protocol=message-boundaries and --boundary, and echo the value passed to --boundary if both are present - this makes the slack manifest commands that call this via hooks ,work properly
 PROTOCOL_FOUND=false
 BOUNDARY_VALUE=""
 for arg in "$@"; do
@@ -20,21 +20,26 @@ if $PROTOCOL_FOUND && [ -n "$BOUNDARY_VALUE" ]; then
   echo "$BOUNDARY_VALUE"
 fi
 
-# we dont have any indication what app is being requested when the get-manifest is called. 
-# so I dont think we can use this to manipulate the names :-/ but if we dont hte validation fails. 
 
-# ARGS_SERIALIZED="$*"
-# touch serialised_args.log
-# echo $ARGS_SERIALIZED > serialised_args.log
-
-REPLACEMENT_NAME=" (${USER_NAME})"
+# App name to use in replacement
+REPLACEMENT_NAME=" (${USER_NAME}) (local)"
 
 if [ "$PROD_DEPLOY" = "true" ]; then
+  # Dont replace the Name
   REPLACEMENT_NAME=""
+  # Get App and Team ID of production app
+  APP_ID=$(jq -r '.apps[].app_id' ".slack/apps.json")
+  TEAM_ID=$(jq -r '.apps[].team_id' ".slack/apps.json")
+
+  # Get Existing prod manifest
+  CURRENT_MANIFEST=$(slack manifest --app $APP_ID --team $TEAM_ID)
+
+  # extract Request URL from existing app
+  REQUEST_URL=$(echo $CURRENT_MANIFEST | jq -r '.settings.event_subscriptions.request_url')
 fi
 
 
-jq -c --monochrome-output \
+MANIFEST_JSON=$(jq -c --monochrome-output \
   --arg name "$REPLACEMENT_NAME" '
   .display_information.name = (
     .display_information.name as $orig |
@@ -47,4 +52,18 @@ jq -c --monochrome-output \
     end
   )
   | .features.bot_user.display_name += $name
-' .slack/manifest.json
+' .slack/manifest.json)
+
+
+# Add the request URLs to the appropraite places for prodcution. Disable socket mode. Set always online 
+if [ "$PROD_DEPLOY" = "true" ]; then
+  MANIFEST_JSON=$(echo $MANIFEST_JSON | jq -c --monochrome-output \
+    --arg requestUrl "$REQUEST_URL" '
+      .settings.socket_mode_enabled = false | 
+      .settings.interactivity.request_url = $requestUrl | 
+      .settings.event_subscriptions.request_url = $requestUrl | 
+      .features.bot_user.always_online = true
+    ')
+fi
+
+echo $MANIFEST_JSON

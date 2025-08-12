@@ -1,11 +1,12 @@
 import { resolve } from "node:path";
-import { Cpu, HealthCheckProtocolType, Memory, Service, Source } from "@aws-cdk/aws-apprunner-alpha";
+import { Cpu, HealthCheckProtocolType, Memory, Service, Source,Secret as AppRunnerSecret } from "@aws-cdk/aws-apprunner-alpha";
 import * as cdk from "aws-cdk-lib";
 import { DockerImageAsset } from "aws-cdk-lib/aws-ecr-assets";
 import { Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { CfnContainer } from "aws-cdk-lib/aws-lightsail";
 import type { Construct } from "constructs";
 import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 
 export class FlicketSlackbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -15,6 +16,9 @@ export class FlicketSlackbotStack extends cdk.Stack {
       this.node.tryGetContext("flicket-ai_port") ?? "8000",
     );
 
+    const signingSecret = new Secret(this, 'SlackSigningSecret', {
+
+    })
     // Define a Docker image asset
     const dockerImageAsset = new DockerImageAsset(this, "FlicketAiApp", {
       directory: resolve("..", "nestjs"), // Path to the directory containing the Dockerfile
@@ -72,7 +76,10 @@ export class FlicketSlackbotStack extends cdk.Stack {
             DYNAMODB_TABLE_PREFIX: dynamoDbPrefix,
             PORT: `${applicationPort}`
           },
-          environmentSecrets: {},
+          environmentSecrets: {
+
+            S: AppRunnerSecret.fromSecretsManager(signingSecret)
+          },
         },
         asset: dockerImageAsset,
       }),
