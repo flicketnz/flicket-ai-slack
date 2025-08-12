@@ -3,6 +3,12 @@
 # get username from git config, which is probably a better source thatn the users login name which could be anything
 USER_NAME=$(git config --global user.name)
 
+# if SLACK_SERVICE_TOKEN is set - define the EXTRA_ARGS that can be appended to any slack command
+EXTRA_ARGS=""
+if [ -n "$SLACK_SERVICE_TOKEN" ]; then
+  EXTRA_ARGS="--token $SLACK_SERVICE_TOKEN"
+fi
+
 
 # Check for --protocol=message-boundaries and --boundary, and echo the value passed to --boundary if both are present - this makes the slack manifest commands that call this via hooks ,work properly
 PROTOCOL_FOUND=false
@@ -32,7 +38,7 @@ if [ "$PROD_DEPLOY" = "true" ]; then
   TEAM_ID=$(jq -r '.apps[].team_id' ".slack/apps.json")
 
   # Get Existing prod manifest
-  CURRENT_MANIFEST=$(slack manifest --app $APP_ID --team $TEAM_ID)
+  CURRENT_MANIFEST=$(slack manifest --app $APP_ID --team $TEAM_ID $EXTRA_ARGS)
 
   # extract Request URL from existing app
   REQUEST_URL=$(echo $CURRENT_MANIFEST | jq -r '.settings.event_subscriptions.request_url')
