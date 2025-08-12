@@ -13,4 +13,5 @@ if [ -n "$SLACK_SERVICE_TOKEN" ]; then
 fi
 
 # Run the deploy. (this also triggers cdk via the deploy hook)
-slack deploy --app $APP_ID --team $TEAM_ID $EXTRA_ARGS
+# --force will enable writing manifest changes without asking permission
+slack deploy --force --app $APP_ID --team $TEAM_ID $EXTRA_ARGS
