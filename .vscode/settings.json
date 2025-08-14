@@ -1,16 +1,13 @@
 {
-  "[typescript][json]": {
+  "[json][jsonc][typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "explicit"
+    "source.organizeImports": "never"
   },
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "editor.formatOnSave": true,
-  
-  "eslint.workingDirectories": [
-    "nestjs"
-  ]
+  "editor.formatOnSave": true
 }

@@ -1,8 +1,0 @@
-{
-	"hooks": {
-		"get-hooks": "npx -q -y -p @slack/cli-hooks slack-cli-get-hooks",
-
-		"start": "npx -q --no-install tsx watch src/app.ts",
-		"deploy": "pushd ../cdk; npx cdk deploy --require-approval never; popd"
-	}
-}
