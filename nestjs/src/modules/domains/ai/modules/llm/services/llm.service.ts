@@ -39,7 +39,7 @@ export class LlmService implements OnApplicationBootstrap {
   ) {
     this.prompts = {
       systemPrompt: readFileSync(
-        resolve("prompts", "system.prompt.txt"),
+        resolve("dist", "prompts", "system.prompt.txt"),
         "utf8",
       ),
     };

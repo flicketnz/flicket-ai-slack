@@ -7,6 +7,7 @@ import { AppModule } from "../app.module";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ["debug", "verbose", "log", "warn"],
+    rawBody: true,
   });
 
   // GET port from config
@@ -21,6 +22,19 @@ async function bootstrap() {
       `Listening on ${serverDetails.family} ${serverDetails.address}:${serverDetails.port}`,
     );
   }
+
+  return app;
 }
 
-void bootstrap();
+async function closeGracefully(signal: NodeJS.Signals) {
+  console.log(`*^!@4=> Received signal to terminate: ${signal}`);
+
+  await (await app).close();
+  process.exit();
+}
+
+process.on("SIGINT", closeGracefully as NodeJS.SignalsListener);
+process.on("SIGTERM", closeGracefully as NodeJS.SignalsListener);
+
+// Start the Application
+const app = bootstrap();

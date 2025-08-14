@@ -88,3 +88,20 @@ You may also want to use [mise](https://mise.jdx.dev/) - this repo is setup with
   ```bash
   AWS_ACCESS_KEY_ID='anykey' AWS_SECRET_ACCESS_KEY='anysecret' aws --region localhost --endpoint http://localhost:8000 dynamodb list-tables
   ```
+
+## Deploying
+
+Deployments are taken care of by github actions. but incase your wondering this is the flow of stuff that needs to happen.
+
+- Checkout repo
+- Install slack cli
+- `npm ci` in `nestjs/`
+- `npm ci` in `cdk/`
+- Build the Dockerfile in `nestjs/`
+- Run script `./nestjs/scripts/slack-deploy-prod.bash`
+  - This does some maigc to auth the slack cli, then runs `slack deploy` with the app and team id's
+    - Internally, it fetches the manifest - which in turn calls `./nestjs/scripts/slack-get-manifest.bash`
+    - Then it executes the `deploy` hook in `./nestjs/.slack/hooks.json` which runs `cdk deploy` in the `./cdk` directory
+- Once the deploy has finished (if its a first deploy) then
+  - Add the correct values to the created secrets to SecretManager.
+  - Add the RequestURL (in multiple places) in the slack app UI.

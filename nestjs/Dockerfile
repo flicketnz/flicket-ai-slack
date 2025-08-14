@@ -29,11 +29,13 @@ RUN --mount=type=cache,target=/npm-cache \
 
 # Copy source code
 COPY --chown=flicketai:nodejs src/ ./src/
-COPY --chown=flicketai:nodejs tsconfig.json ./ 
 COPY --chown=flicketai:nodejs .slack/ .slack/
 
 # Build the application
-RUN --mount=type=bind,source=package.json,target=/app/package.json \
+RUN \
+    --mount=type=bind,source=package.json,target=/app/package.json \
+    --mount=type=bind,source=tsconfig.json,target=/app/tsconfig.json \
+    --mount=type=bind,source=nest-cli.json,target=/app/nest-cli.json \
     npm run build
 
 RUN --mount=type=bind,source=package.json,target=/app/package.json \
@@ -41,6 +43,9 @@ RUN --mount=type=bind,source=package.json,target=/app/package.json \
 
 # Production stage
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS production
+
+# Install dumb-init for pid 1 management
+RUN apk add dumb-init
 
 ENV PORT=3000
 
@@ -70,4 +75,4 @@ HEALTHCHECK --interval=5m --timeout=3s \
 EXPOSE ${PORT}
 
 # Start the application
-CMD ["node", "dist/app.js"]
+CMD ["dumb-init", "node", "dist/bootstrap/main.js"]

@@ -2,14 +2,18 @@ import { Controller, Logger } from "@nestjs/common";
 import { QueryBus } from "@nestjs/cqrs";
 import type { SayArguments, SlackEventMiddlewareArgs } from "@slack/bolt";
 import { Message } from "nestjs-slack-bolt";
+import { SlackService } from "nestjs-slack-bolt/dist/services/slack.service";
 
 import { LlmConversationQuery } from "../../../../common/queries/llm-conversation.query";
 
-@Controller()
+@Controller("slack")
 export class SlackEntrypointController {
   private readonly logger = new Logger(SlackEntrypointController.name);
 
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(
+    private readonly queryBus: QueryBus,
+    private slackService: SlackService,
+  ) {}
 
   // Handle _any_ Message event :-/
   @Message("")
@@ -43,6 +47,17 @@ export class SlackEntrypointController {
         `Processing message from user ${userId} in channel ${channelId}`,
       );
 
+      // Execute initially
+      if (threadTs) {
+        this.setThreadStatus(channelId, threadTs);
+      }
+      // Then every 5 seconds
+      const statusUpdater: NodeJS.Timeout | undefined = setInterval(() => {
+        if (threadTs) {
+          this.setThreadStatus(channelId, threadTs);
+        }
+      }, 5000);
+
       // Create the LLM conversation query
       const query = LlmConversationQuery.createForSlack(
         message,
@@ -75,6 +90,8 @@ you MAY NOT use any heading syntax`,
 
       // Execute the query using CQRS
       const response = await this.queryBus.execute(query);
+
+      clearTimeout(statusUpdater);
 
       // Send the response back to Slack
       if (typeof response.content === "string") {
@@ -134,6 +151,32 @@ you MAY NOT use any heading syntax`,
         thread_ts: threadTs,
       });
     }
+  }
+  private setThreadStatus(channelId: string, threadTs: string) {
+    const statuses = [
+      "Thinking...",
+      "Powering up the mainframe...",
+      "Loading the flux capacitor...",
+      "Cranking the handle...",
+      "Summoning the AI spirits...",
+      "Consulting the oracle...",
+      "Engaging hyperdrive...",
+      "Initializing the neural network...",
+      "Activating the AI core...",
+      "Booting up the AI...",
+      "Preparing the quantum computer...",
+      "Aligning the stars...",
+      "Charging the AI batteries...",
+      "Tuning the AI antenna...",
+      "Calibrating the AI sensors...",
+    ];
+
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+    void this.slackService.client.assistant.threads.setStatus({
+      channel_id: channelId,
+      thread_ts: threadTs,
+      status: randomStatus,
+    });
   }
 }
 

@@ -8,19 +8,36 @@ import type { Construct } from "constructs";
 import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 
+const SERVICE_NAME = `FlicketAgentPlatform`
+/**
+ * Build id for cdk constructs
+ * @param idPartial Must be provided in PascalCase
+ * @returns 
+ */
+const buildId = (idPartial:`${Uppercase<string>}${string}`) => `${SERVICE_NAME}_${idPartial}`
 export class FlicketSlackbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+    /**
+     * 
+     * @param contextKeyPartial PascalCased Context key name will be prefixed with ServiceName
+     * @param defaultValue default value to return. 
+     * @returns 
+     */
+    const getContext = (contextKeyPartial: `${Uppercase<string>}${string}`, defaultValue?: string) => this.node.tryGetContext(`${SERVICE_NAME}_${contextKeyPartial}`) ?? defaultValue
+
 
     const applicationPort = Number.parseInt(
-      this.node.tryGetContext("flicket-ai_port") ?? "8000",
+      getContext('Port') ?? "8000",
     );
 
-    const signingSecret = new Secret(this, 'SlackSigningSecret', {
+    const slackSigningSecret = new Secret(this, buildId('SlackSigningSecret'), {});
+    const openRouterApiKey = new Secret(this, buildId('OpenRouterAPIKey'), {})
+    const slackBotToken = new Secret(this, buildId('SlackBotToken'), {});
 
-    })
+    
     // Define a Docker image asset
-    const dockerImageAsset = new DockerImageAsset(this, "FlicketAiApp", {
+    const dockerImageAsset = new DockerImageAsset(this, buildId('NestJsImage'), {
       directory: resolve("..", "nestjs"), // Path to the directory containing the Dockerfile
       cacheFrom: [
         {
@@ -34,15 +51,15 @@ export class FlicketSlackbotStack extends cdk.Stack {
       },
       buildArgs: {
         NODE_VERSION:
-          this.node.tryGetContext("flicket-ai_node-version") ?? "24",
+          getContext("ImageBuildNodeVersion","24"),
         ALPINE_VERSION:
-          this.node.tryGetContext("flicket-ai_alpine-version") ??
-          "3.21",
+          getContext("ImageBuildAlpineVersion",
+          "3.21"),
       },
       platform: {
         platform:
-          this.node.tryGetContext("flicket-ai_platform") ??
-          "linux/amd64",
+          getContext("ImageBuildPlatform",
+          "linux/amd64"),
       },
     });
 
@@ -50,23 +67,16 @@ export class FlicketSlackbotStack extends cdk.Stack {
       assumedBy: new ServicePrincipal("tasks.apprunner.amazonaws.com"),
     });
 
-    const slackAppToken = this.node.tryGetContext("flicket-ai_slack-app-token") ?? process.env.SLACK_APP_TOKEN
-    const slackBotToken = this.node.tryGetContext("flicket-ai_slack-bot-token") ?? process.env.SLACK_BOT_TOKEN
-    const openRouterAPIKey = this.node.tryGetContext("flicket-ai_open-router-api-key") ?? process.env.OPENROUTER_API_KEY
-    const dynamoDbPrefix = this.node.tryGetContext("flicket-ai_dynamodb-table-prefix") ?? "FlicketAI_"
+    const dynamoDbPrefix = getContext("DynamoDBTablePrefix", `${SERVICE_NAME}_`)
 
-    new Service(this, "Service", {
+    const appRunnerAgentPlatform = new Service(this, "FlicketAgentPlatform", {
       cpu: Cpu.QUARTER_VCPU,
       memory: Memory.HALF_GB,
-
       source: Source.fromAsset({
         imageConfiguration: {
           port: applicationPort,
           environmentVariables: {
-            "SLACK_BOT_TOKEN": slackBotToken,
-            "SLACK_APP_TOKEN": slackAppToken,
             "LLM_PRIMARY_PROVIDER": "openai",
-            "LLM_OPENAI_KEY": openRouterAPIKey,
             "LLM_OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
             "LLM_OPENAI_MODEL": "anthropic/claude-3.5-haiku",
             "LLM_TOOLS_SEARXNG_ENABLED": "true",
@@ -77,8 +87,9 @@ export class FlicketSlackbotStack extends cdk.Stack {
             PORT: `${applicationPort}`
           },
           environmentSecrets: {
-
-            S: AppRunnerSecret.fromSecretsManager(signingSecret)
+            SLACK_SIGNING_SECRET: AppRunnerSecret.fromSecretsManager(slackSigningSecret),
+            SLACK_BOT_TOKEN: AppRunnerSecret.fromSecretsManager(slackBotToken),
+            LLM_OPENAI_KEY:AppRunnerSecret.fromSecretsManager(openRouterApiKey)
           },
         },
         asset: dockerImageAsset,
@@ -100,6 +111,11 @@ export class FlicketSlackbotStack extends cdk.Stack {
     // Output the ECR URI
     new cdk.CfnOutput(this, "ECRImageUri", {
       value: dockerImageAsset.imageUri,
+    });
+
+    // Output the FlicketAgentPlatform AppRunner Public URL
+    new cdk.CfnOutput(this, "AppRunnerPublicUrl", {
+      value: appRunnerAgentPlatform.serviceUrl,
     });
 
 
